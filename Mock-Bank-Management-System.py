@@ -1,397 +1,275 @@
-
 import pickle
 import os
 import pathlib
 import sqlite3
-conn=sqlite3.connect('bank.db')
-cur = conn.cursor()
-cur.execute('create table customer_details2015(acct_no int primary     key,acct_name varchar(25) ,phone_no bigint(25) check(phone_no>11),address varchar(25),cr_amt float )')
-cur.execute('create table customer_details2016(username varchar(25) primary key,passwrd varchar(25) not null )')
-cur.execute('create table transactions(acct_no int(11),date date ,withdrawal_amt bigint(20),amount_added bigint(20) )')
-cur.execute('create table user_table(username varchar(25) primary key,passwrd varchar(25) not null )')
-print('======================================================WELCOME TO YDS BANK============================================================')
 import datetime as dt
-print(dt.datetime.now())
-print('1.REGISTER')
-print()
-print('2.LOGIN')
-print()
 
+conn = sqlite3.connect('bank.db')
+cur = conn.cursor()
 
+# Create tables if not exist
+cur.execute('''
+    CREATE TABLE IF NOT EXISTS customer_details2015(
+        acct_no INTEGER PRIMARY KEY,
+        acct_name VARCHAR(25),
+        phone_no BIGINT CHECK(length(phone_no) >= 11),
+        address VARCHAR(25),
+        cr_amt FLOAT
+    )
+''')
 
-n=int(input('enter your choice='))
-print()
+cur.execute('''
+    CREATE TABLE IF NOT EXISTS customer_details2016(
+        username VARCHAR(25) PRIMARY KEY,
+        passwrd VARCHAR(25) NOT NULL
+    )
+''')
 
-if n== 1:
-     name=input('Enter a Username=')
-     print()
-     passwd=int(input('Enter a 4 DIGIT Password='))
-     print()
-     V_SQLInsert="INSERT  INTO customer_details2016 (passwrd,username) values (" +  str (passwd) + ",' " + name + " ') "
-     cur.execute(V_SQLInsert)
-     conn.commit()
-     print()
-     print('USER created succesfully')
+cur.execute('''
+    CREATE TABLE IF NOT EXISTS transactions(
+        acct_no INTEGER,
+        date DATE,
+        withdrawal_amt BIGINT,
+        amount_added BIGINT
+    )
+''')
 
-
-if  n==2 :
-     name=input('Enter your Username=')
-     print()
-     passwd=int(input('Enter your 4 DIGIT Password='))
-     V_Sql_Sel="select * from customer_details2016 where passwrd='"+str (passwd)+"' and username=  ' " +name+ " ' "
-     cur.execute(V_Sql_Sel)
-     if cur.fetchone() is  None:
-          print()
-          print('Invalid username or password')
-     else:
-          print()
-          import menu
-class Account :
-    accNo = 0
-    name = ''
-    deposit=0
-    type = ''
+# Account class definition
+class Account:
+    def __init__(self):
+        self.accNo = 0
+        self.name = ''
+        self.deposit = 0
+        self.type = ''
 
     def createAccount(self):
-        self.accNo= int(input("Enter the account no : "))
-        self.name = input("Enter the account holder name : ")
-        self.type = input("Ente the type of account [C/S] : ")
-        self.deposit = int(input("Enter The Initial amount(>=500 for Saving and >=1000 for current"))
-        print("\n\n\nAccount Created")
+        self.accNo = int(input("Enter the account number: "))
+        self.name = input("Enter the account holder name: ")
+        self.type = input("Enter the type of account [C/S]: ")
+        self.deposit = int(input("Enter the initial amount (>=500 for Savings and >=1000 for Current): "))
+        print("\nAccount Created Successfully!")
 
     def showAccount(self):
-        print("Account Number : ",self.accNo)
-        print("Account Holder Name : ", self.name)
-        print("Type of Account",self.type)
-        print("Balance : ",self.deposit)
+        print("\nAccount Number:", self.accNo)
+        print("Account Holder Name:", self.name)
+        print("Type of Account:", self.type)
+        print("Balance:", self.deposit)
 
     def modifyAccount(self):
-        print("Account Number : ",self.accNo)
-        self.name = input("Modify Account Holder Name :")
-        self.type = input("Modify type of Account :")
-        self.deposit = int(input("Modify Balance :"))
+        print("\nAccount Number:", self.accNo)
+        self.name = input("Modify Account Holder Name: ")
+        self.type = input("Modify Type of Account: ")
+        self.deposit = int(input("Modify Balance: "))
 
-    def depositAmount(self,amount):
+    def depositAmount(self, amount):
         self.deposit += amount
 
-    def withdrawAmount(self,amount):
-        self.deposit -= amount
+    def withdrawAmount(self, amount):
+        if self.deposit >= amount:
+            self.deposit -= amount
+        else:
+            print("Insufficient balance!")
 
     def report(self):
-        print(self.accNo, " ",self.name ," ",self.type," ", self.deposit)
+        print(self.accNo, " ", self.name, " ", self.type, " ", self.deposit)
 
     def getAccountNo(self):
         return self.accNo
+
     def getAcccountHolderName(self):
         return self.name
+
     def getAccountType(self):
         return self.type
+
     def getDeposit(self):
         return self.deposit
 
-
-
-
-
-
-
-def writeAccount():
-    account = Account()
-    account.createAccount()
-    writeAccountsFile(account)
-
-def displayAll():
+# Function to write account details to file using pickle
+def writeAccountsFile(account):
     file = pathlib.Path("accounts.data")
-    if file.exists ():
-        infile = open('accounts.data','rb')
-        mylist = pickle.load(infile)
-        for item in mylist :
-            print(item.accNo," ", item.name, " ",item.type, " ",item.deposit )
-        infile.close()
-    else :
-        print("No records to display")
-
-
-def displaySp(num):
-    file = pathlib.Path("accounts.data")
-    if file.exists ():
-        infile = open('accounts.data','rb')
-        mylist = pickle.load(infile)
-        infile.close()
-        found = False
-        for item in mylist :
-            if item.accNo == num :
-                print("Your account Balance is = ",item.deposit)
-                found = True
-    else :
-        print("No records to Search")
-    if not found :
-        print("No existing record with this number")
-
-def depositAndWithdraw(num1,num2):
-    file = pathlib.Path("accounts.data")
-    if file.exists ():
-        infile = open('accounts.data','rb')
-        mylist = pickle.load(infile)
-        infile.close()
-        os.remove('accounts.data')
-        for item in mylist :
-            if item.accNo == num1 :
-                if num2 == 1 :
-                    amount = int(input("Enter the amount to deposit : "))
-                    item.deposit += amount
-                    print("Your account is updted")
-                elif num2 == 2 :
-                    amount = int(input("Enter the amount to withdraw : "))
-                    if amount <= item.deposit :
-                        item.deposit -=amount
-                    else :
-                        print("You cannot withdraw larger amount")
-
-    else :
-        print("No records to Search")
-    outfile = open('newaccounts.data','wb')
-    pickle.dump(mylist, outfile)
-    outfile.close()
-    os.rename('newaccounts.data', 'accounts.data')
-
-
-def deleteAccount(num):
-    file = pathlib.Path("accounts.data")
-    if file.exists ():
-        infile = open('accounts.data','rb')
-        oldlist = pickle.load(infile)
-        infile.close()
-        newlist = []
-        for item in oldlist :
-            if item.accNo != num :
-                newlist.append(item)
-        os.remove('accounts.data')
-        outfile = open('newaccounts.data','wb')
-        pickle.dump(newlist, outfile)
-        outfile.close()
-        os.rename('newaccounts.data', 'accounts.data')
-
-def modifyAccount(num):
-    file = pathlib.Path("accounts.data")
-    if file.exists ():
-        infile = open('accounts.data','rb')
-        oldlist = pickle.load(infile)
-        infile.close()
-        os.remove('accounts.data')
-        for item in oldlist :
-            if item.accNo == num :
-                item.name = input("Enter the account holder name : ")
-                item.type = input("Enter the account Type : ")
-                item.deposit = int(input("Enter the Amount : "))
-
-        outfile = open('newaccounts.data','wb')
-        pickle.dump(oldlist, outfile)
-        outfile.close()
-        os.rename('newaccounts.data', 'accounts.data')
-
-
-def writeAccountsFile(account) :
-
-    file = pathlib.Path("accounts.data")
-    if file.exists ():
-        infile = open('accounts.data','rb')
+    if file.exists():
+        infile = open('accounts.data', 'rb')
         oldlist = pickle.load(infile)
         oldlist.append(account)
         infile.close()
         os.remove('accounts.data')
-    else :
+    else:
         oldlist = [account]
-    outfile = open('newaccounts.data','wb')
-    pickle.dump(oldlist, outfile)
-    outfile.close()
-    os.rename('newaccounts.data', 'accounts.data')
 
+    with open('accounts.data', 'wb') as outfile:
+        pickle.dump(oldlist, outfile)
 
+# Function to display all accounts from file
+def displayAll():
+    file = pathlib.Path("accounts.data")
+    if file.exists():
+        with open('accounts.data', 'rb') as infile:
+            mylist = pickle.load(infile)
+            for item in mylist:
+                print("Account Number:", item.accNo)
+                print("Account Holder Name:", item.name)
+                print("Type of Account:", item.type)
+                print("Balance:", item.deposit)
+    else:
+        print("No records to display")
 
+# Function to display specific account details from file
+def displaySp(num):
+    file = pathlib.Path("accounts.data")
+    if file.exists():
+        with open('accounts.data', 'rb') as infile:
+            mylist = pickle.load(infile)
+            found = False
+            for item in mylist:
+                if item.accNo == num:
+                    print("\nYour account Balance is:", item.deposit)
+                    found = True
+                    break
+            if not found:
+                print("No existing record with this number")
+    else:
+        print("No records to search")
 
-c = 'y'
-while c == 'y':
+# Function to deposit or withdraw from a specific account
+def depositAndWithdraw(num1, num2):
+    file = pathlib.Path("accounts.data")
+    if file.exists():
+        with open('accounts.data', 'rb') as infile:
+            mylist = pickle.load(infile)
+            for item in mylist:
+                if item.accNo == num1:
+                    if num2 == 1:
+                        amount = int(input("Enter the amount to deposit: "))
+                        item.deposit += amount
+                        print("Your account is updated")
+                    elif num2 == 2:
+                        amount = int(input("Enter the amount to withdraw: "))
+                        if item.deposit >= amount:
+                            item.deposit -= amount
+                            print("Your account is updated")
+                        else:
+                            print("Insufficient balance!")
 
-                         print()
-                         print('1.CREATE BANK ACCOUNT')
-                         print()
-                         print('2.TRANSACTION')
-                         print()
-                         print('3.CUSTOMER DETAILS')
-                         print()
-                         print('4.TRANSACTION DETAILS')
-                         print()
-                         print('5.DELETE ACCOUNT')
-                         print()
+            with open('newaccounts.data', 'wb') as outfile:
+                pickle.dump(mylist, outfile)
+            os.remove('accounts.data')
+            os.rename('newaccounts.data', 'accounts.data')
+    else:
+        print("No records to search")
 
-                         print("6. NEW ACCOUNT")
-                         print()
-                         print("7. DEPOSIT AMOUNT")
-                         print()
-                         print("8. WITHDRAW AMOUNT")
-                         print()
-                         print("9. BALANCE ENQUIRY")
-                         print()
-                         print("10. ALL ACCOUNT HOLDER LIST")
-                         print()
-                         print("11. CLOSE AN ACCOUNT")
-                         print()
-                         print("12. MODIFY AN ACCOUNT")
-                         print()
-                         print('13.QUIT')
-                         print()
+# Function to delete an account
+def deleteAccount(num):
+    file = pathlib.Path("accounts.data")
+    if file.exists():
+        with open('accounts.data', 'rb') as infile:
+            oldlist = pickle.load(infile)
+            newlist = [item for item in oldlist if item.accNo != num]
+            with open('newaccounts.data', 'wb') as outfile:
+                pickle.dump(newlist, outfile)
+            os.remove('accounts.data')
+            os.rename('newaccounts.data', 'accounts.data')
+            print("Account deleted successfully")
+    else:
+        print("No records to delete")
 
-                         print("\tSelect Your Option (1-13) ")
+# Function to modify an account
+def modifyAccount(num):
+    file = pathlib.Path("accounts.data")
+    if file.exists():
+        with open('accounts.data', 'rb') as infile:
+            oldlist = pickle.load(infile)
+            for item in oldlist:
+                if item.accNo == num:
+                    item.name = input("Enter the account holder name: ")
+                    item.type = input("Enter the account type: ")
+                    item.deposit = int(input("Enter the amount: "))
+            with open('newaccounts.data', 'wb') as outfile:
+                pickle.dump(oldlist, outfile)
+            os.remove('accounts.data')
+            os.rename('newaccounts.data', 'accounts.data')
+            print("Account modified successfully")
+    else:
+        print("No records to modify")
 
-                         n=int(input('Enter your CHOICE='))
-                         print()
+# Main menu loop
+while True:
+    print("\n=========================")
+    print("WELCOME TO YDS BANK")
+    print(dt.datetime.now())
+    print("=========================")
+    print("1. Create Bank Account")
+    print("2. Transaction")
+    print("3. Customer Details")
+    print("4. Transaction Details")
+    print("5. Delete Account")
+    print("6. New Account")
+    print("7. Deposit Amount")
+    print("8. Withdraw Amount")
+    print("9. Balance Enquiry")
+    print("10. All Account Holder List")
+    print("11. Close an Account")
+    print("12. Modify an Account")
+    print("13. Quit")
+    print("=========================")
 
-                         if n == 1:
+    choice = int(input("Enter your choice: "))
 
-                                    acc_no=int(input('Enter your ACCOUNT NUMBER='))
-                                    print()
-                                    acc_name=input('Enter your ACCOUNT NAME=')
-                                    print()
-                                    ph_no=int(input('Enter your PHONE NUMBER='))
-                                    print()
-                                    add=(input('Enter your place='))
-                                    print()
-                                    cr_amt=int(input('Enter your credit amount='))
-                                    V_SQLInsert="INSERT  INTO customer_details2015 values (" +  str (acc_no) + ",' " + acc_name + " ',"+str(ph_no) + ",' " +add + " ',"+ str (cr_amt) + " ) "
-                                    cur.execute(V_SQLInsert)
-                                    print()
-                                    print('Account Created Succesfully!!!!!')
-                                    conn.commit()
+    if choice == 1:
+        acc = Account()
+        acc.createAccount()
+        writeAccountsFile(acc)
 
+    elif choice == 2:
+        num = int(input("Enter Account Number: "))
+        depositAndWithdraw(num, 2)
 
-                         if n == 2:
-                              acct_no=int(input('Enter Your Account Number='))
-                              cur.execute('select * from customer_details2015 where acct_no='+str (acct_no) )
-                              data=cur.fetchall()
-                              count=cur.rowcount
-                              conn.commit()
-                              if count == 0:
-                                   print()
-                                   print('Account Number Invalid Sorry Try Again Later')
-                                   print()
-                              else:
-                                   print()
-                                   print('1.WITHDRAW AMOUNT')
-                                   print()
-                                   print('2.ADD AMOUNT')
-                                   print()
+    elif choice == 3:
+        num = int(input("Enter Account Number: "))
+        displaySp(num)
 
-                                   print()
-                                   x=int(input('Enter your CHOICE='))
-                                   print()
-                                   if x == 1:
-                                        amt=int(input('Enter withdrawl amount='))
-                                        cr_amt=0
-                                        cur.execute('update customer_details2015 set   cr_amt=cr_amt-'+str(amt) +  ' where acct_no=' +str(acct_no) )
-                                        V_SQLInsert="INSERT  INTO transactions values ({} , '{}' , {} , {}) ".format(acct_no,dt.datetime.today(),amt,cr_amt)
-                                        cur.execute(  V_SQLInsert)
-                                        conn.commit()
-                                        print()
-                                        print('Account Updated Succesfully!!!!!')
+    elif choice == 4:
+        num = int(input("Enter Account Number: "))
+        displaySp(num)
 
+    elif choice == 5:
+        num = int(input("Enter Account Number: "))
+        deleteAccount(num)
 
+    elif choice == 6:
+        acc = Account()
+        acc.createAccount()
+        writeAccountsFile(acc)
 
-                                   if x== 2:
-                                         amt=int(input('Enter amount to be added='))
-                                         cr_amt=0
-                                         cur.execute('update customer_details2015 set  cr_amt=cr_amt+'+str(amt) +  ' where acct_no=' +str(acct_no) )
-                                         V_SQLInsert="INSERT  INTO transactions values ({} , '{}' , {} , {}) ".format(acct_no,dt.datetime.today(),cr_amt,amt)
-                                         cur.execute(  V_SQLInsert)
-                                         conn.commit()
-                                         print()
-                                         print('Account Updated Succesfully!!!!!')
+    elif choice == 7:
+        num = int(input("Enter Account Number: "))
+        depositAndWithdraw(num, 1)
 
-                         if n == 3:
-                              acct_no=int(input('Enter your account number='))
-                              print()
-                              cur.execute('select * from customer_details2015 where acct_no='+str(acct_no) )
-                              if cur.fetchone() is  None:
-                                   print()
-                                   print('Invalid Account number')
-                              else:
-                                   cur.execute('select * from customer_details2015 where acct_no='+str(acct_no) )
-                                   data=cur.fetchall()
-                                   for row in data:
-                                        print('ACCOUNT NO=',acct_no)
-                                        print()
-                                        print('ACCOUNT NAME=',row[1])
-                                        print()
-                                        print(' PHONE NUMBER=',row[2])
-                                        print()
-                                        print('ADDRESS=',row[3])
-                                        print()
-                                        print('cr_amt=',row[4])
-                         if n == 4:
-                               acct_no=int(input('Enter your account number='))
-                               print()
-                               cur.execute('select * from customer_details2015 where acct_no='+str(acct_no) )
-                               if cur.fetchone() is  None:
-                                   print()
-                                   print('Invalid Account number')
-                               else:
-                                   cur.execute('select * from transactions where acct_no='+str(acct_no) )
-                                   data=cur.fetchall()
-                                   for row in data:
-                                        print('ACCOUNT NO=',acct_no)
-                                        print()
-                                        print('DATE=',row[1])
-                                        print()
-                                        print(' WITHDRAWAL AMOUNT=',row[2])
-                                        print()
-                                        print('AMOUNT ADDED=',row[3])
-                                        print()
+    elif choice == 8:
+        num = int(input("Enter Account Number: "))
+        depositAndWithdraw(num, 2)
 
+    elif choice == 9:
+        num = int(input("Enter Account Number: "))
+        displaySp(num)
 
-                         if n == 5:
-                              print('DELETE YOUR ACCOUNT')
-                              acct_no=int(input('Enter your account number='))
+    elif choice == 10:
+        displayAll()
 
-                              cur.execute('delete from customer_details2015 where acct_no='+str(acct_no) )
-                              print('ACCOUNT DELETED SUCCESFULLY')
-                         if n == 6:
-                           writeAccount()
-                         if n == 7:
-                             num = int(input("\tEnter The account No. : "))
-                             depositAndWithdraw(num, 1)
-                         if n == 8:
-                               num = int(input("\tEnter The account No. : "))
-                               depositAndWithdraw(num, 2)
-                         if n == 9:
-                             num = int(input("\tEnter The account No. : "))
-                             displaySp(num)
-                         if n == 10:
-                               displayAll();
-                         if n == 11:
-                          num =int(input("\tEnter The account No. : "))
-                          deleteAccount(num)
-                         if n == 12:
-                          num = int(input("\tEnter The account No. : "))
-                          modifyAccount(num)
-                         if n == 13:
-                          print('DO YOU WANT TO EXPLORE MORE ABOUT YOUR ACCOUNT (y/n)')
-                          c=input ('enter your choice=')
+    elif choice == 11:
+        num = int(input("Enter Account Number: "))
+        deleteAccount(num)
 
+    elif choice == 12:
+        num = int(input("Enter Account Number: "))
+        modifyAccount(num)
 
+    elif choice == 13:
+        print("Thank you for visiting YDS Bank!")
+        break
 
+    else:
+        print("Invalid choice. Please try again.")
 
-else:
-     print('THANK YOU PLEASE VISIT YDS BANK AGAIN')
-     quit()
-
-
-
-import sqlite3
-funn=sqlite3.connect('yashh.db')
-ll=funn.cursor()
-
-ll.execute=("create table Emp(empno int primary key, ename varchar(30), sal int, dno int);")
-ll.execute=("create table Emp(empno int primary key, ename varchar(30), sal int, dno int);")
-ll.execute("INSERT INTO employee values(1,'Aman',30000,2);")
-ll.execute("SELECT * FROM employee;")
-print(ll.fetchall())
+# Close database connection
+conn.close()
